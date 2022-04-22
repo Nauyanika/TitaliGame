@@ -5,8 +5,10 @@ const fs=require("fs");
 let bots = [];
 let botDVT = [];
 let botABH = [];
+let botTitali = [];
+
 let maxBots = 6;
-let totalGames = 3;
+let totalGames = 4;
 LoadBots();
 
 function GetBots(gameId) {
@@ -14,6 +16,9 @@ function GetBots(gameId) {
         case 1: return bots ; break;
         case 2: return botDVT ; break;
         case 3: return botABH ; break;
+        case 4: return  botTitali ; break;
+
+       
     }
 }
 

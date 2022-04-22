@@ -62,12 +62,12 @@ async function SetInitialData() {//THIS WILL RUN ONLY ONCE
 
 
 function StartTitaliGame(data){
-	SendCurrentRoundInfo(data);
 	OnChipMove(data);
 	OnBetsPlaced(data);
-    OnCurrentTimer(data);
+	//start----------
+	SendCurrentRoundInfo(data);
     OnWinNo(data);
-    OnPlayerWin(data);
+    OnPlayerWin();
 
 	//OnDissConnected(data);
 	gameHistoryRecord(data)
@@ -104,32 +104,69 @@ function OnBetsPlaced(data) {
     });
 }
 //-------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------
 
-//On current timer---------------------------------------------------------------------------------
-function OnCurrentTimer(data) {
-    let socket = data[commonVar.socket];
-    socket.on(events.OnCurrentTimer, (data) => {
-// now need action
-    });
-}
 
 
 
 //On OnPlayerWin--------------------------------------------------------------------------------------
-function OnPlayerWin(data) {
-    let socket = data[commonVar.socket];
-    socket.on(events.OnPlayerWin, (data) => {
-// now need action
-    });
+
+async function OnPlayerWin() {
+	let result = WinNosCalculator();
+	let winningSpot = result.spot;
+	for(let socketId in BetHolder) {
+		let betData = BetHolder[socketId];
+
+		if (winningSpot === 0 ) {
+			betData[commonVar.win] = betData[0] * LEFT_RIGHT_WIN_RATE;
+		} else if (winningSpot === 1) {
+			betData[commonVar.win] = betData[1] * MIDDLE_WIN_RATE;
+		} else {
+			betData[commonVar.win] = betData[2] * LEFT_RIGHT_WIN_RATE;
+		}
+
+		BetHolder[socketId] = betData;
+
+		// let winAmount = betData[commonVar.win] - (betData[0]+betData[1]+betData[2])
+		// betData[commonVar.socket].emit(events.OnPlayerWin,{winAmount});
+
+		if (betData[commonVar.win] > 0) {
+			let winAmount=betData[commonVar.win]-betData[commonVar.win]*commonVar.adminCommisionRate;
+			debug("player "+betData[commonVar.playerId]+` wins amount ${winAmount}`);
+			betData[commonVar.socket].emit(events.OnPlayerWin,{winAmount});
+		}else{
+			debug(`player ${betData[commonVar.playerId]} lost ${betData[0]+betData[1]+betData[2]} `)
+		}
+	}
+
+	//$- Add bet info to Database
+	const playerWiningBalance = await service.updateWinningAmount({ spot: winningSpot, room_id: timeStamp });
+	debug("Player bet info:");
+	BetHolder = new Object();
+
 }
 //On OnWinNo------------------------------------------------------------------------------------------
-function OnWinNo(data) {
-    let socket = data[commonVar.socket];
-    socket.on(events.OnWinNo, (data) => {
-// now need action
-    });
+async function OnWinNo() {
+	let result = WinNosCalculator();
+	let winNo = result.winNo;
+	let winningSpot = result.spot;
+	let data = { room_id: timeStamp, game_id:4,winNo1:winNo[0],winNo2:winNo[1],spot:winningSpot }
+	let WinningCards = createWinningCards(winNo);
+
+	const saveWinningNo = await service.updateWinningNo(data); //db
+
+	// //ADD WIN NO TO ARRAY
+	previousWins = PushWinNo(winningSpot);
+	//debug(`L :${fakeLeftBets}, M : ${fakeMiddleBets}, R :${fakeRightBets}`);
+
+	CalculateBotsWinAmount(winningSpot);
+	await PlayersWinAmountCalculator(winningSpot);
+	let RandomWinAmount = RandomWinAmounts[Math.floor(GetRandomNo(0, RandomWinAmounts.length))];
+	//debug("random win no:" + RandomWinAmount);
+
+	Sockets.to(gameRoom).emit(events.OnWinNo, {winningSpot,previousWins,RandomWinAmount });
+	SuffleBots();
 }
+
 
 //---------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------
@@ -277,7 +314,7 @@ async function SendCurrentRoundInfo(data) {
 		let result = WinNosCalculator();
 		let winNo = result.winNo;
 		let winningSpot = result.spot;
-		let data = { room_id: timeStamp, game_id:2,winNo1:winNo[0],winNo2:winNo[1],spot:winningSpot }
+		let data = { room_id: timeStamp, game_id:4,winNo1:winNo[0],winNo2:winNo[1],spot:winningSpot }
 		let WinningCards = createWinningCards(winNo);
 
 		const saveWinningNo = await service.updateWinningNo(data); //db
@@ -592,8 +629,8 @@ async function SendCurrentRoundInfo(data) {
 
         ROUND_COUNT = (ROUND_COUNT === 5) ? 0 : ++ROUND_COUNT;
 
-		i = timerVar.bettingTimer;
-	    j = timerVar.betCalculationTimer;
+		i = timerVar.bettingTimerTitali;
+	    j = timerVar.betCalculationTimerTitali;
 	    k = timerVar.waitTimer;
 
 	    LeftBets = [];
@@ -605,7 +642,7 @@ async function SendCurrentRoundInfo(data) {
 	    debug("betting...");
 	    isTimeUp = false;
 	    OnTimerStart();
-	    SendBotData();
+	   // SendBotData();
 	}
 
 

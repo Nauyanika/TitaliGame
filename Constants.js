@@ -81,7 +81,12 @@ const Spot =
 
 const TimerVar = {
     bettingTimer : 15,
+    bettingTimerTitali : 25,
+
     betCalculationTimer : 10,
+    betCalculationTimerTitali: 5,
+     
+
     waitTimer : 3,
     delay : 1000,
     intervalDalay : 2000,
