@@ -40,6 +40,10 @@ function pushBots(botArr,gameId){
         case 1: bots = botArr; break;
         case 2: botDVT = botArr ; break;
         case 3: botABH = botArr; break;
+        case 4: botTitali = botArr; break;
+
+
+
     }
     return;
 }

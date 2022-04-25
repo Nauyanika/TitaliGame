@@ -642,7 +642,7 @@ async function SendCurrentRoundInfo(data) {
 	    debug("betting...");
 	    isTimeUp = false;
 	    OnTimerStart();
-	   // SendBotData();
+	    SendBotData();
 	}
 
 
